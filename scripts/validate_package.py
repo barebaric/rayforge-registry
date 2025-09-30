@@ -1,162 +1,164 @@
 #!/usr/bin/env python3
 """
-Validates a Rayforge package for correctness.
+Validates a Rayforge package's metadata for the registry server.
 
-This script checks the 'rayforge-package.yaml' metadata file for schema
-correctness, content consistency, and the existence of declared assets.
-
-It can be run locally (e.g., as a pre-commit hook) or in a CI/CD
-pipeline.
+This script checks a given 'rayforge-package.yaml' metadata file for
+schema correctness and content consistency.
 """
 
 import argparse
+import re
 import sys
-import yaml
-import semver
 from pathlib import Path
 
-# The expected schema for the 'rayforge-package.yaml' metadata file.
+import semver
+import yaml
+
+# Schema defines required keys and their expected types.
 SCHEMA = {
-    "name": str,
-    "description": str,
-    "author": str,
-    "provides": dict,
+    "name": {"type": str, "required": True},
+    "description": {"type": str, "required": True},
+    "author": {"type": dict, "required": True},
+    "provides": {"type": dict, "required": True},
+}
+
+AUTHOR_SCHEMA = {
+    "name": {"type": str, "required": True},
+    "email": {"type": str, "required": True},
 }
 
 
+def _check_non_empty_str(value, key_name):
+    """Raises ValueError if a string is None, empty, or just whitespace."""
+    if not value or not value.strip():
+        raise ValueError(f"Key '{key_name}' must not be empty.")
+
+
+def _validate_dict_schema(data, schema, parent_key=""):
+    """Validates a dictionary against a defined schema."""
+    for key, rules in schema.items():
+        full_key = f"{parent_key}.{key}" if parent_key else key
+        if rules.get("required") and key not in data:
+            raise ValueError(f"Missing required key: '{full_key}'")
+
+        if key in data:
+            expected_type = rules["type"]
+            actual_value = data[key]
+            if not isinstance(actual_value, expected_type):
+                raise TypeError(
+                    f"Key '{full_key}' has wrong type. "
+                    f"Expected {expected_type.__name__}, but "
+                    f"got {type(actual_value).__name__}."
+                )
+
+
 def validate_schema(data):
-    """
-    Checks for required keys and correct types in the metadata.
-
-    Args:
-        data (dict): The parsed YAML data from the metadata file.
-
-    Raises:
-        ValueError: If a required key is missing.
-        TypeError: If a key has an incorrect value type.
-    """
+    """Checks for required keys and correct types in the metadata."""
     print("-> Running schema validation...")
-    for key, expected_type in SCHEMA.items():
-        if key not in data:
-            raise ValueError(f"Missing required key in metadata: '{key}'")
-        if not isinstance(data[key], expected_type):
-            raise TypeError(
-                f"Key '{key}' has wrong type. Expected {expected_type}, "
-                f"got {type(data[key])}."
-            )
+    _validate_dict_schema(data, SCHEMA)
+    _validate_dict_schema(data.get("author", {}), AUTHOR_SCHEMA, "author")
     print("   ... Schema OK")
 
 
-def validate_content(data, root_path, tag=None, name=None):
-    """
-    Performs sanity checks on the metadata content.
-
-    Args:
-        data (dict): The parsed YAML data from the metadata file.
-        root_path (Path): The root directory of the package to validate.
-        tag (str, optional): The Git tag to validate.
-        name (str, optional): The expected package name to validate.
-
-    Raises:
-        ValueError: If any content is inconsistent, invalid, or uses
-                    placeholder values.
-        FileNotFoundError: If a declared asset path does not exist.
-    """
-    print("-> Running content validation...")
-
-    # If a tag is provided (e.g., in remote CI), validate it.
-    if tag:
-        try:
-            semver.VersionInfo.parse(tag.lstrip("v"))
-        except ValueError:
-            raise ValueError(
-                f"Version tag '{tag}' is not a valid semantic version "
-                "(e.g., v1.2.3)."
-            )
+def _check_tag(tag):
+    """Validates that a tag is a valid semantic version."""
+    if not tag:
+        return
+    try:
+        semver.VersionInfo.parse(tag.lstrip("v"))
         print(f"   ... Version tag '{tag}' OK")
-
-    # If a package name is provided (e.g., in remote CI), validate it.
-    if name:
-        if data.get("name") != name:
-            raise ValueError(
-                f"Package name mismatch. Expected '{name}', but "
-                f"metadata has '{data.get('name')}'."
-            )
-        print(f"   ... Package name '{name}' OK")
-
-    # Check for placeholder values that should have been changed.
-    if "your-github-username" in data.get("author", ""):
+    except ValueError:
         raise ValueError(
-            "Placeholder 'author' value detected. Please update it."
+            f"Version tag '{tag}' is not a valid semantic version "
+            "(e.g., v1.2.3)."
         )
 
-    # Check that declared asset paths exist and are secure.
-    if "assets" in data.get("provides", {}):
-        for asset_info in data["provides"]["assets"]:
-            path_str = asset_info.get("path")
-            if not path_str:
-                raise ValueError("Asset entry is missing the 'path' key.")
 
-            asset_path = root_path / path_str
-            if not asset_path.exists():
-                raise FileNotFoundError(
-                    f"Asset path '{path_str}' does not exist."
-                )
-            if ".." in Path(path_str).parts:
-                raise ValueError(
-                    f"Invalid asset path: '{path_str}'. "
-                    "Paths must not use '..'."
-                )
+def _check_author_content(author_data):
+    """Checks for placeholders and valid content in the author field."""
+    name = author_data.get("name", "")
+    email = author_data.get("email", "")
+
+    _check_non_empty_str(name, "author.name")
+    _check_non_empty_str(email, "author.email")
+
+    if "your-github-username" in name:
+        raise ValueError(
+            "Placeholder 'author.name' detected. Please update it."
+        )
+
+    # Basic email regex to catch common mistakes.
+    email_regex = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
+    if not re.match(email_regex, email):
+        raise ValueError(f"Author email '{email}' has an invalid format.")
+
+
+def _check_provides(provides_data):
+    """Validates the structure of the 'provides' section."""
+    if not provides_data or not (
+        "code" in provides_data or "assets" in provides_data
+    ):
+        raise ValueError(
+            "The 'provides' section must contain 'code' and/or 'assets'."
+        )
+
+    if "assets" in provides_data:
+        if not isinstance(provides_data["assets"], list):
+            raise TypeError("'provides.assets' must be a list.")
+
+    if "code" in provides_data:
+        if not isinstance(provides_data["code"], str):
+            raise TypeError("'provides.code' must be a string.")
+
+
+def validate_content(data, tag=None):
+    """Performs sanity checks on the metadata content."""
+    print("-> Running content validation...")
+    _check_tag(tag)
+    _check_non_empty_str(data.get("name"), "name")
+    _check_non_empty_str(data.get("description"), "description")
+    _check_author_content(data.get("author", {}))
+    _check_provides(data.get("provides", {}))
     print("   ... Content OK")
 
 
 def main():
-    """
-    Main execution function. Parses arguments and runs validations.
-    """
+    """Main execution function. Parses arguments and runs validations."""
     parser = argparse.ArgumentParser(
-        description="Validate a Rayforge package."
+        description="Validate a Rayforge package's metadata."
     )
     parser.add_argument(
-        "path",
-        nargs="?",
-        default=".",
-        help="Path to the package root directory (defaults to current dir).",
+        "metadata_file",
+        type=Path,
+        help="Path to the rayforge-package.yaml file to validate.",
     )
     parser.add_argument(
         "--tag",
         default=None,
-        help="The Git tag to validate (used by CI, optional locally).",
-    )
-    parser.add_argument(
-        "--name",
-        default=None,
-        help="The expected package name (used by CI, optional locally).",
+        help="The Git tag to validate (used by CI).",
     )
     args = parser.parse_args()
 
-    root_path = Path(args.path).resolve()
-    metadata_file = root_path / "rayforge-package.yaml"
-    print(f"Validating package at: {root_path}")
-
-    if not metadata_file.is_file():
-        print(
-            f"\nERROR: Metadata file not found at '{metadata_file}'",
-            file=sys.stderr,
-        )
-        return 1
+    print(f"Validating metadata file: {args.metadata_file}")
 
     try:
-        with open(metadata_file, "r") as f:
+        if not args.metadata_file.is_file():
+            raise FileNotFoundError(f"File not found: {args.metadata_file}")
+
+        with open(args.metadata_file, "r") as f:
             metadata = yaml.safe_load(f)
+        if not isinstance(metadata, dict):
+            raise TypeError(
+                f"'{args.metadata_file.name}' must be a YAML dictionary."
+            )
 
         validate_schema(metadata)
-        validate_content(metadata, root_path, tag=args.tag, name=args.name)
+        validate_content(metadata, tag=args.tag)
 
-        print("\nSUCCESS: Your package metadata looks great!")
+        print("\nSUCCESS: Your package metadata is valid!")
         return 0
 
-    except (ValueError, TypeError, FileNotFoundError) as e:
+    except (ValueError, TypeError, FileNotFoundError, NameError) as e:
         print(f"\nERROR: Validation failed. {e}", file=sys.stderr)
         return 1
     except Exception as e:

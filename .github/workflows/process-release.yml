@@ -38,15 +38,33 @@ jobs:
           # If it succeeds, its output (the mode) is captured.
           echo "commit_mode=$(python ./scripts/authorize_and_get_mode.py '${{ steps.payload.outputs.repo_name }}')" >> $GITHUB_OUTPUT
 
+      - name: Download Package Metadata File via Git Archive
+        id: download_meta
+        run: |
+          # Use 'git archive' to fetch a single file without cloning.
+          # The output is a tar stream, which we pipe to 'tar' to extract
+          # the file's contents (-xO) directly to a local file.
+          REMOTE_REPO="https://github.com/${{ steps.payload.outputs.repo_name }}.git"
+          REMOTE_TAG="${{ steps.payload.outputs.new_tag }}"
+          METADATA_PATH="rayforge-package.yaml"
+
+          echo "Fetching '$METADATA_PATH' from $REMOTE_REPO at tag $REMOTE_TAG"
+
+          git archive --remote="$REMOTE_REPO" "$REMOTE_TAG" "$METADATA_PATH" | tar -xO > package-metadata.yaml
+
+          # Set the path of the created file as an output for later steps.
+          echo "metadata_path=package-metadata.yaml" >> $GITHUB_OUTPUT
+
       - name: "Perform comprehensive package validation"
         run: |
           python ./scripts/validate_package.py \
-            --repo '${{ steps.payload.outputs.repo_name }}' \
+            ${{ steps.download_meta.outputs.metadata_path }} \
             --tag '${{ steps.payload.outputs.new_tag }}'
 
       - name: Update registry.yaml file
         run: |
           python ./scripts/update_registry.py \
+            ${{ steps.download_meta.outputs.metadata_path }} \
             --repo '${{ steps.payload.outputs.repo_name }}' \
             --tag '${{ steps.payload.outputs.new_tag }}'
 
