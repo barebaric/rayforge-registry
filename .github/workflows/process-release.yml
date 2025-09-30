@@ -38,20 +38,25 @@ jobs:
           # If it succeeds, its output (the mode) is captured.
           echo "commit_mode=$(python ./scripts/authorize_and_get_mode.py '${{ steps.payload.outputs.repo_name }}')" >> $GITHUB_OUTPUT
 
-      - name: Download Package Metadata File via Git Archive
+      - name: Download Package Metadata File
         id: download_meta
         run: |
-          # Use 'git archive' to fetch a single file without cloning.
-          # The output is a tar stream, which we pipe to 'tar' to extract
-          # the file's contents (-xO) directly to a local file.
-          REMOTE_REPO="https://github.com/${{ steps.payload.outputs.repo_name }}.git"
+          # Use curl to fetch the raw metadata file. This is the reliable,
+          # GitHub-supported method for downloading a single file.
+          REMOTE_REPO="${{ steps.payload.outputs.repo_name }}"
           REMOTE_TAG="${{ steps.payload.outputs.new_tag }}"
           METADATA_PATH="rayforge-package.yaml"
-
-          echo "Fetching '$METADATA_PATH' from $REMOTE_REPO at tag $REMOTE_TAG"
-
-          git archive --remote="$REMOTE_REPO" "$REMOTE_TAG" "$METADATA_PATH" | tar -xO > package-metadata.yaml
-
+          
+          METADATA_URL="https://raw.githubusercontent.com/$REMOTE_REPO/$REMOTE_TAG/$METADATA_PATH"
+          
+          echo "Downloading metadata from: $METADATA_URL"
+          
+          # Use curl with flags:
+          # -f: Fail fast with an error if the server returns an HTTP error (like 404).
+          # -L: Follow redirects.
+          # -o: Specify the output filename.
+          curl -f -L -o package-metadata.yaml "$METADATA_URL"
+          
           # Set the path of the created file as an output for later steps.
           echo "metadata_path=package-metadata.yaml" >> $GITHUB_OUTPUT
 
