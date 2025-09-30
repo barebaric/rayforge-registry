@@ -36,7 +36,7 @@ jobs:
         run: |
           # If the repo is not allowed, it will exit 1 and fail the entire job here.
           # If it succeeds, its output (the mode) is captured.
-          echo "commit_mode=$(python ./scripts/authorize_and_get_mode.py '${{ steps.payload.outputs.repo_name }}')" >> $GITHUB_OUTPUT
+          echo "commit_mode=$(python ./scripts/get_commit_mode.py '${{ steps.payload.outputs.repo_name }}')" >> $GITHUB_OUTPUT
 
       - name: Download Package Metadata File
         id: download_meta
