@@ -3,3 +3,8 @@ repositories:
     mode: direct
     contact: "knipknap@gmail.com"
     notes: "Official assets maintained by the Rayforge core team."
+
+  - repo: barebaric/rayforge-package-template
+    mode: direct
+    contact: "knipknap@gmail.com"
+    notes: "Official package template maintained by the Rayforge core team."
