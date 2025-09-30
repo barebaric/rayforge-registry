@@ -19,9 +19,11 @@ jobs:
       - name: Set up Python and Dependencies
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
-          cache: 'pip'
-      - run: pip install pyyaml semver
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install build dependencies
+        run: pip install -r requirements-dev.txt
 
       - name: Get release info from payload
         id: payload
@@ -54,7 +56,7 @@ jobs:
           git config --global user.name "Rayforge Registry Bot"
           git config --global user.email "noreply@barebaric.com"
           git add registry.yaml
-          git commit -m "feat(auto): Publish ${{ steps.payload.outputs.repo_name }}@${{ steps.payload.outputs.new_tag }}"
+          git commit -m "bot: Publish ${{ steps.payload.outputs.repo_name }}@${{ steps.payload.outputs.new_tag }}"
           git push
 
       - name: "Deploy: Create Pull Request for Review"
@@ -62,9 +64,9 @@ jobs:
         uses: peter-evans/create-pull-request@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: 'feat: Add ${{ steps.payload.outputs.repo_name }}@${{ steps.payload.outputs.new_tag }}'
-          branch: 'bot/update-${{ steps.payload.outputs.repo_name }}-${{ steps.payload.outputs.new_tag }}'
-          title: '[Review Required] Registry Update for ${{ steps.payload.outputs.repo_name }}@${{ steps.payload.outputs.new_tag }}'
+          commit-message: "feat: Add ${{ steps.payload.outputs.repo_name }}@${{ steps.payload.outputs.new_tag }}"
+          branch: "bot/update-${{ steps.payload.outputs.repo_name }}-${{ steps.payload.outputs.new_tag }}"
+          title: "[Review Required] Registry Update for ${{ steps.payload.outputs.repo_name }}@${{ steps.payload.outputs.new_tag }}"
           body: |
             Automated PR for community package update. All automated validations have passed.
             Please perform a final manual review and merge.

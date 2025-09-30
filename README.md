@@ -1,6 +1,6 @@
 # Rayforge Package Registry
 
-Welcome! This is the official, registry for Rayforge packages.
+Welcome! This is the official registry for Rayforge packages.
 The registry is a directory of plugins and assets that can be installed from
 within the Rayforge laser cutting app.
 
@@ -8,15 +8,24 @@ within the Rayforge laser cutting app.
 
 When you are ready to publish a package, follow these steps:
 
+
 ### Step 1: Create your package as a GitHub repository
 
 Ensure that you use our template, because it includes the necessary GitHub
 workflow to publish your package automatically.
 
+```bash
+git clone https://github.com/barebaric/rayforge-package-template.git
+```
+
+Then adapt to create your package!
+
+
 ### Step 2: Request your repository to be listed
 
 This is a one-time step. Simply [edit allowed-repositories.yaml](allowed-repositories.yaml)
 by adding your repository.
+
 
 ### Step 3: Set Up Release Token (One-Time Setup)
 
@@ -28,7 +37,7 @@ The automated release workflow needs a token to announce your releases.
     - Click **"Generate new token"** (classic).
     - Give it a name (e.g., `Rayforge Registry Announcer`).
     - Set an expiration date.
-    - Under **"Select scopes,"** check only the box for **`public_repo`**.
+    - Under **"Select scopes,"** check only the box for **`repo`**.
     - Click **"Generate token"** and copy it.
 
 2.  **Add the Token to Repository Secrets:**
@@ -36,6 +45,7 @@ The automated release workflow needs a token to announce your releases.
     - Click **"New repository secret"**.
     - **Name:** `REGISTRY_ACCESS_TOKEN`
     - **Secret:** Paste your token.
+
 
 ### Step 4: Done. Your packages are now released whenever you push a version tag
 
