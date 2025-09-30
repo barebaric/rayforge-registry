@@ -1,0 +1,71 @@
+name: Process Package Release Announcement
+
+on:
+  repository_dispatch:
+    types: [package-release-published]
+
+jobs:
+  update-registry:
+    name: Validate and Process Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout the registry repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python and Dependencies
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      - run: pip install pyyaml semver
+
+      - name: Get release info from payload
+        id: payload
+        run: |
+          echo "repo_name=${{ github.event.client_payload.repository }}" >> $GITHUB_OUTPUT
+          echo "new_tag=${{ github.event.client_payload.tag }}" >> $GITHUB_OUTPUT
+
+      - name: "Authorize source and determine commit mode"
+        id: auth
+        run: |
+          # If the repo is not allowed, it will exit 1 and fail the entire job here.
+          # If it succeeds, its output (the mode) is captured.
+          echo "commit_mode=$(python ./scripts/authorize_and_get_mode.py '${{ steps.payload.outputs.repo_name }}')" >> $GITHUB_OUTPUT
+
+      - name: "Perform comprehensive package validation"
+        run: |
+          python ./scripts/validate_package.py \
+            --repo '${{ steps.payload.outputs.repo_name }}' \
+            --tag '${{ steps.payload.outputs.new_tag }}'
+
+      - name: Update registry.yaml file
+        run: |
+          python ./scripts/update_registry.py \
+            --repo '${{ steps.payload.outputs.repo_name }}' \
+            --tag '${{ steps.payload.outputs.new_tag }}'
+
+      - name: "Deploy: Commit and Push Directly"
+        if: steps.auth.outputs.commit_mode == 'direct'
+        run: |
+          git config --global user.name "Rayforge Registry Bot"
+          git config --global user.email "noreply@barebaric.com"
+          git add registry.yaml
+          git commit -m "feat(auto): Publish ${{ steps.payload.outputs.repo_name }}@${{ steps.payload.outputs.new_tag }}"
+          git push
+
+      - name: "Deploy: Create Pull Request for Review"
+        if: steps.auth.outputs.commit_mode == 'pr'
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: 'feat: Add ${{ steps.payload.outputs.repo_name }}@${{ steps.payload.outputs.new_tag }}'
+          branch: 'bot/update-${{ steps.payload.outputs.repo_name }}-${{ steps.payload.outputs.new_tag }}'
+          title: '[Review Required] Registry Update for ${{ steps.payload.outputs.repo_name }}@${{ steps.payload.outputs.new_tag }}'
+          body: |
+            Automated PR for community package update. All automated validations have passed.
+            Please perform a final manual review and merge.
+          labels: automated, review-required

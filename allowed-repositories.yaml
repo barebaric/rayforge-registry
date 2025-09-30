@@ -1,0 +1,5 @@
+repositories:
+  - repo: barebaric/rayforge-assets
+    mode: direct
+    contact: "knipknap@gmail.com"
+    notes: "Official assets maintained by the Rayforge core team."
