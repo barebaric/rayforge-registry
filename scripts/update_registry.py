@@ -139,10 +139,15 @@ def update_package_entry(
     )
 
     # Update static metadata from the package file.
+    depends = metadata.get("depends", [])
+    if isinstance(depends, str):
+        depends = [depends]
+
     package_entry.update(
         {
             "name": metadata["name"],
             "description": metadata.get("description", ""),
+            "depends": depends,
             "author": metadata.get("author", {}),
         }
     )
@@ -170,6 +175,7 @@ def update_package_entry(
     sorted_package_entry = {
         "name": package_entry["name"],
         "description": package_entry.get("description", ""),
+        "depends": package_entry.get("depends", []),
         "author": package_entry.get("author", {}),
         "repository": package_entry["repository"],
         "latest_stable": package_entry.get("latest_stable", ""),
