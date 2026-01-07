@@ -2,10 +2,13 @@ packages:
   rayforge-package-template:
     name: My Awesome Package
     description: A template package demonstrating code and asset provisioning.
+    depends:
+    - rayforge>=0.27.0,~0.27
     author:
       name: Me Author
       email: you@invalid.com
     repository: https://github.com/barebaric/rayforge-package-template
-    latest_stable: v0.0.2
+    latest_stable: v0.0.3
     versions:
+    - v0.0.3
     - v0.0.2
