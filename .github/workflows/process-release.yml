@@ -55,15 +55,15 @@ jobs:
           # -f: Fail fast with an error if the server returns an HTTP error (like 404).
           # -L: Follow redirects.
           # -o: Specify the output filename.
-          curl -f -L -o addon-metadata.yaml "$METADATA_URL"
+          curl -f -L -o rayforge-addon.yaml "$METADATA_URL"
           
           # Set the path of the created file as an output for later steps.
-          echo "metadata_path=addon-metadata.yaml" >> $GITHUB_OUTPUT
+          echo "metadata_path=rayforge-addon.yaml" >> $GITHUB_OUTPUT
 
       - name: "Perform comprehensive addon validation"
         run: |
           python ./scripts/validate_addon.py \
-            ${{ steps.download_meta.outputs.metadata_path }} \
+            . \
             --tag '${{ steps.payload.outputs.new_tag }}'
 
       - name: Update registry.yaml file
