@@ -12,3 +12,16 @@ packages:
     versions:
     - v0.0.3
     - v0.0.2
+addons:
+  rayforge-addon-template:
+    name: My Awesome Addon
+    description: A template addon demonstrating code and asset provisioning.
+    depends:
+    - rayforge>=0.27.0,<2.0.0
+    author:
+      name: Me Author
+      email: you@invalid.com
+    repository: https://github.com/barebaric/rayforge-addon-template
+    latest_stable: v0.0.4
+    versions:
+    - v0.0.4
