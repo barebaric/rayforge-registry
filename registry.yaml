@@ -8,8 +8,9 @@ addons:
       name: Me Author
       email: you@invalid.com
     repository: https://github.com/barebaric/rayforge-addon-template
-    latest_stable: v0.0.4
+    latest_stable: v0.0.5
     versions:
+    - v0.0.5
     - v0.0.4
     - v0.0.3
     - v0.0.2
