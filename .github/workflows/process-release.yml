@@ -3,6 +3,16 @@ name: Process Package Release Announcement
 on:
   repository_dispatch:
     types: [addon-release-published]
+  workflow_dispatch:
+    inputs:
+      repository:
+        description: 'Addon repository (owner/repo)'
+        required: true
+        type: string
+      tag:
+        description: 'Git tag to publish (e.g., v1.0.0)'
+        required: true
+        type: string
 
 jobs:
   update-registry:
@@ -28,8 +38,14 @@ jobs:
       - name: Get release info from payload
         id: payload
         run: |
-          echo "repo_name=${{ github.event.client_payload.repository }}" >> $GITHUB_OUTPUT
-          echo "new_tag=${{ github.event.client_payload.tag }}" >> $GITHUB_OUTPUT
+          # Support both repository_dispatch (client_payload) and workflow_dispatch (inputs)
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "repo_name=${{ github.event.inputs.repository }}" >> $GITHUB_OUTPUT
+            echo "new_tag=${{ github.event.inputs.tag }}" >> $GITHUB_OUTPUT
+          else
+            echo "repo_name=${{ github.event.client_payload.repository }}" >> $GITHUB_OUTPUT
+            echo "new_tag=${{ github.event.client_payload.tag }}" >> $GITHUB_OUTPUT
+          fi
 
       - name: "Authorize source and determine commit mode"
         id: auth
