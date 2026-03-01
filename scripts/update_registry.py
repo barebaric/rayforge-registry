@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Updates the main registry.yaml file with a new package release.
+Updates the main registry.yaml file with a new addon release.
 
-This script reads a package's validated metadata file, finds the
+This script reads a addon's validated metadata file, finds the
 corresponding entry in the main registry, and adds or updates the
 version information with improved, human-readable formatting.
 """
@@ -20,29 +20,29 @@ REGISTRY_FILE = Path("registry.yaml")
 
 class NiceDumper(yaml.SafeDumper):
     """
-    A custom YAML dumper that adds a blank line before each package entry
-    in the 'packages' dictionary. This makes the registry file much easier
+    A custom YAML dumper that adds a blank line before each addon entry
+    in the 'addon' dictionary. This makes the registry file much easier
     for humans to read.
     """
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # A flag to prevent a newline before the very first package.
-        self.first_package_written = False
+        # A flag to prevent a newline before the very first addon.
+        self.first_addon_written = False
 
     def write_key(self):
         """
-        Override to add a newline before each package key, but not the
+        Override to add a newline before each addon key, but not the
         first one.
         """
         # The PyYAML dumper's `self.indent` tracks the number of spaces.
-        # We want to add a newline only for the package keys, which are at
+        # We want to add a newline only for the addon keys, which are at
         # the correct indentation level (e.g., 2 spaces).
         if self.indent == self.best_indent:
-            if self.first_package_written:
+            if self.first_addon_written:
                 self.stream.write("\n")
-            # After this key, any subsequent package key should get a newline.
-            self.first_package_written = True
+            # After this key, any subsequent addon key should get a newline.
+            self.first_addon_written = True
 
         super().write_key()  # type: ignore
 
@@ -55,12 +55,12 @@ def parse_arguments() -> argparse.Namespace:
         argparse.Namespace: The parsed command-line arguments.
     """
     parser = argparse.ArgumentParser(
-        description="Update the registry with a new package version."
+        description="Update the registry with a new addon version."
     )
     parser.add_argument(
         "metadata_file",
         type=Path,
-        help="Path to the validated rayforge-package.yaml file.",
+        help="Path to the validated rayforge-addon.yaml file.",
     )
     parser.add_argument(
         "--repo", required=True, help="Repository name (owner/repo)"
@@ -112,38 +112,38 @@ def save_yaml_file(data: Dict[str, Any], file_path: Path):
         )
 
 
-def update_package_entry(
+def update_addon_entry(
     registry_data: Dict, metadata: Dict, repo: str, tag: str
 ):
     """
-    Updates or creates a package entry within the registry data.
+    Updates or creates a addon entry within the registry data.
 
     This function modifies the registry_data dictionary in place.
 
     Args:
         registry_data: The full, current registry data.
-        metadata: The package's metadata from its YAML file.
+        metadata: The addon's metadata from its YAML file.
         repo: The repository name (e.g., 'owner/name').
         tag: The new version tag (e.g., 'v1.2.3').
     """
-    package_id = Path(repo).name
-    # Ensure 'packages' key exists at the top level.
-    if "packages" not in registry_data:
-        registry_data["packages"] = {}
-    packages = registry_data["packages"]
+    addon_id = Path(repo).name
+    # Ensure 'addons' key exists at the top level.
+    if "addons" not in registry_data:
+        registry_data["addons"] = {}
+    addons = registry_data["addons"]
 
-    # Get or create the entry for this package.
-    package_entry = packages.get(
-        package_id,
+    # Get or create the entry for this addon.
+    addon_entry = addons.get(
+        addon_id,
         {"repository": f"https://github.com/{repo}", "versions": []},
     )
 
-    # Update static metadata from the package file.
+    # Update static metadata from the addon file.
     depends = metadata.get("depends", [])
     if isinstance(depends, str):
         depends = [depends]
 
-    package_entry.update(
+    addon_entry.update(
         {
             "name": metadata["name"],
             "description": metadata.get("description", ""),
@@ -153,38 +153,38 @@ def update_package_entry(
     )
 
     # Add the new version if it doesn't already exist.
-    if tag not in package_entry["versions"]:
-        package_entry["versions"].append(tag)
+    if tag not in addon_entry["versions"]:
+        addon_entry["versions"].append(tag)
 
     # Sort versions using semantic versioning to ensure correctness.
     try:
-        package_entry["versions"].sort(
+        addon_entry["versions"].sort(
             key=lambda v: semver.VersionInfo.parse(v.lstrip("v")),
             reverse=True,
         )
         # The highest valid version is the latest stable release.
-        package_entry["latest_stable"] = package_entry["versions"][0]
+        addon_entry["latest_stable"] = addon_entry["versions"][0]
     except ValueError as e:
         print(
-            f"WARNING: Could not sort versions for '{package_id}' due to "
+            f"WARNING: Could not sort versions for '{addon_id}' due to "
             f"invalid semantic version. {e}",
             file=sys.stderr,
         )
 
-    # Sort the keys within this specific package entry for consistency
-    sorted_package_entry = {
-        "name": package_entry["name"],
-        "description": package_entry.get("description", ""),
-        "depends": package_entry.get("depends", []),
-        "author": package_entry.get("author", {}),
-        "repository": package_entry["repository"],
-        "latest_stable": package_entry.get("latest_stable", ""),
-        "versions": package_entry["versions"],
+    # Sort the keys within this specific addon entry for consistency
+    sorted_addon_entry = {
+        "name": addon_entry["name"],
+        "description": addon_entry.get("description", ""),
+        "depends": addon_entry.get("depends", []),
+        "author": addon_entry.get("author", {}),
+        "repository": addon_entry["repository"],
+        "latest_stable": addon_entry.get("latest_stable", ""),
+        "versions": addon_entry["versions"],
     }
 
-    packages[package_id] = sorted_package_entry
+    addons[addon_id] = sorted_addon_entry
 
-    registry_data["packages"] = dict(sorted(packages.items()))
+    registry_data["addons"] = dict(sorted(addons.items()))
 
 
 def main() -> int:
@@ -192,12 +192,12 @@ def main() -> int:
     args = parse_arguments()
 
     try:
-        # Load both the package metadata and the current registry.
+        # Load both the addon metadata and the current registry.
         metadata = load_yaml_file(args.metadata_file)
         registry = load_yaml_file(REGISTRY_FILE)
 
         # Perform the update logic.
-        update_package_entry(registry, metadata, args.repo, args.tag)
+        update_addon_entry(registry, metadata, args.repo, args.tag)
 
         # Save the modified registry back to the file.
         save_yaml_file(registry, REGISTRY_FILE)

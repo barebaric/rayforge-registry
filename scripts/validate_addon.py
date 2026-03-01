@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Validates a Rayforge package's metadata for the registry server.
+Validates a Rayforge addon's metadata for the registry server.
 
-This script checks a given 'rayforge-package.yaml' metadata file for
+This script checks a given 'rayforge-addon.yaml' metadata file for
 schema correctness and content consistency.
 """
 
@@ -14,10 +14,12 @@ from pathlib import Path
 import semver
 import yaml
 
-# Schema defines required keys and their expected types.
+METADATA_FILENAME = "rayforge-addon.yaml"
+
 SCHEMA = {
     "name": {"type": str, "required": True},
     "description": {"type": str, "required": True},
+    "api_version": {"type": int, "required": True},
     "depends": {"type": list, "required": True},
     "author": {"type": dict, "required": True},
     "provides": {"type": dict, "required": True},
@@ -108,9 +110,27 @@ def validate_schema(data):
     print("   ... Schema OK")
 
 
+def _check_api_version(api_version):
+    """Validates that api_version is a positive integer."""
+    if not isinstance(api_version, int):
+        raise ValueError(
+            f"api_version must be an integer, got: "
+            f"{type(api_version).__name__}"
+        )
+    if api_version < 1:
+        raise ValueError(
+            f"api_version must be a positive integer, got: {api_version}"
+        )
+    print(f"   ... API version {api_version} OK")
+
+
 def _check_tag(tag):
     """Validates that a tag is a valid semantic version."""
     if not tag:
+        print(
+            "   ... WARNING: No tag provided. Git tags are required for "
+            "installable addons."
+        )
         return
     try:
         semver.VersionInfo.parse(tag.lstrip("v"))
@@ -120,6 +140,18 @@ def _check_tag(tag):
             f"Version tag '{tag}' is not a valid semantic version "
             "(e.g., v1.2.3)."
         )
+
+
+def _check_addon_name(metadata_name, expected_name):
+    """Validates addon name in metadata against the expected one."""
+    if not expected_name:
+        return
+    if metadata_name != expected_name:
+        raise ValueError(
+            f"Addon name mismatch. Expected '{expected_name}', but "
+            f"metadata has '{metadata_name}'."
+        )
+    print(f"   ... Addon name '{expected_name}' OK")
 
 
 def _check_author_content(author_data):
@@ -135,36 +167,81 @@ def _check_author_content(author_data):
             "Placeholder 'author.name' detected. Please update it."
         )
 
-    # Basic email regex to catch common mistakes.
     email_regex = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
     if not re.match(email_regex, email):
         raise ValueError(f"Author email '{email}' has an invalid format.")
 
 
+def _is_valid_module_path(path: str) -> bool:
+    """Check if a string is a valid Python module path."""
+    if not path or path.startswith(".") or path.endswith("."):
+        return False
+    parts = path.split(".")
+    return all(part.isidentifier() for part in parts)
+
+
+def _check_entry_point(entry_point, field_name):
+    """Validates a Python module entry point format."""
+    if entry_point is None:
+        return
+    if not _is_valid_module_path(entry_point):
+        raise ValueError(
+            f"'{field_name}' entry point '{entry_point}' is not a valid "
+            "module path. Use dotted notation (e.g., 'my_addon.backend')."
+        )
+    print(f"   ... {field_name} entry point '{entry_point}' OK")
+
+
 def _check_provides(provides_data):
     """Validates the structure of the 'provides' section."""
     if not provides_data or not (
-        "code" in provides_data or "assets" in provides_data
+        "backend" in provides_data
+        or "frontend" in provides_data
+        or "assets" in provides_data
     ):
         raise ValueError(
-            "The 'provides' section must contain 'code' and/or 'assets'."
+            "The 'provides' section must contain 'backend', "
+            "'frontend', and/or 'assets'."
         )
 
+    if "backend" in provides_data:
+        backend = provides_data["backend"]
+        if not isinstance(backend, str):
+            raise TypeError("'provides.backend' must be a string.")
+        _check_entry_point(backend, "backend")
+
+    if "frontend" in provides_data:
+        frontend = provides_data["frontend"]
+        if not isinstance(frontend, str):
+            raise TypeError("'provides.frontend' must be a string.")
+        _check_entry_point(frontend, "frontend")
+
     if "assets" in provides_data:
-        if not isinstance(provides_data["assets"], list):
+        assets = provides_data["assets"]
+        if not isinstance(assets, list):
             raise TypeError("'provides.assets' must be a list.")
+        for i, asset_info in enumerate(assets):
+            if not isinstance(asset_info, dict):
+                raise TypeError(
+                    f"'provides.assets[{i}]' must be a dictionary."
+                )
+            if "path" not in asset_info:
+                raise ValueError(
+                    f"'provides.assets[{i}]' must have a 'path' key."
+                )
+        print(f"   ... {len(assets)} asset(s) declared")
 
-    if "code" in provides_data:
-        if not isinstance(provides_data["code"], str):
-            raise TypeError("'provides.code' must be a string.")
 
-
-def validate_content(data, tag=None):
+def validate_content(data, tag=None, name=None):
     """Performs sanity checks on the metadata content."""
     print("-> Running content validation...")
     _check_tag(tag)
+    _check_addon_name(data.get("name"), name)
+    _check_api_version(data.get("api_version"))
+
     _check_non_empty_str(data.get("name"), "name")
     _check_non_empty_str(data.get("description"), "description")
+
     _check_depends(data.get("depends", []))
     _check_author_content(data.get("author", {}))
     _check_provides(data.get("provides", {}))
@@ -174,41 +251,57 @@ def validate_content(data, tag=None):
 def main():
     """Main execution function. Parses arguments and runs validations."""
     parser = argparse.ArgumentParser(
-        description="Validate a Rayforge package's metadata."
+        description="Validate a Rayforge addon's metadata."
     )
     parser.add_argument(
-        "metadata_file",
-        type=Path,
-        help="Path to the rayforge-package.yaml file to validate.",
+        "path",
+        nargs="?",
+        default=".",
+        help="Path to addon root directory (defaults to current dir).",
     )
     parser.add_argument(
         "--tag",
         default=None,
         help="The Git tag to validate (used by CI).",
     )
+    parser.add_argument(
+        "--name",
+        default=None,
+        help="The expected addon name (used by CI).",
+    )
     args = parser.parse_args()
 
-    print(f"Validating metadata file: {args.metadata_file}")
+    root_path = Path(args.path).resolve()
+    metadata_file = root_path / METADATA_FILENAME
+    print(f"Validating addon at: {root_path}")
 
     try:
-        if not args.metadata_file.is_file():
-            raise FileNotFoundError(f"File not found: {args.metadata_file}")
+        if not metadata_file.is_file():
+            raise FileNotFoundError(
+                f"Metadata file not found: {metadata_file}"
+            )
 
-        with open(args.metadata_file, "r") as f:
+        with open(metadata_file, "r") as f:
             metadata = yaml.safe_load(f)
         if not isinstance(metadata, dict):
             raise TypeError(
-                f"'{args.metadata_file.name}' must be a YAML dictionary."
+                f"'{METADATA_FILENAME}' must be a YAML dictionary."
             )
 
         validate_schema(metadata)
-        validate_content(metadata, tag=args.tag)
+        validate_content(metadata, tag=args.tag, name=args.name)
 
-        print("\nSUCCESS: Your package metadata is valid!")
+        print("\nSUCCESS: Your addon metadata is valid!")
         return 0
 
     except (ValueError, TypeError, FileNotFoundError, NameError) as e:
         print(f"\nERROR: Validation failed. {e}", file=sys.stderr)
+        return 1
+    except yaml.YAMLError as e:
+        print(
+            f"\nERROR: Could not parse '{METADATA_FILENAME}'. {e}",
+            file=sys.stderr,
+        )
         return 1
     except Exception as e:
         print(f"\nERROR: An unexpected error occurred. {e}", file=sys.stderr)

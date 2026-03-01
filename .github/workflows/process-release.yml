@@ -2,7 +2,7 @@ name: Process Package Release Announcement
 
 on:
   repository_dispatch:
-    types: [package-release-published]
+    types: [addon-release-published]
 
 jobs:
   update-registry:
@@ -45,7 +45,7 @@ jobs:
           # GitHub-supported method for downloading a single file.
           REMOTE_REPO="${{ steps.payload.outputs.repo_name }}"
           REMOTE_TAG="${{ steps.payload.outputs.new_tag }}"
-          METADATA_PATH="rayforge-package.yaml"
+          METADATA_PATH="rayforge-addon.yaml"
           
           METADATA_URL="https://raw.githubusercontent.com/$REMOTE_REPO/$REMOTE_TAG/$METADATA_PATH"
           
@@ -55,14 +55,14 @@ jobs:
           # -f: Fail fast with an error if the server returns an HTTP error (like 404).
           # -L: Follow redirects.
           # -o: Specify the output filename.
-          curl -f -L -o package-metadata.yaml "$METADATA_URL"
+          curl -f -L -o addon-metadata.yaml "$METADATA_URL"
           
           # Set the path of the created file as an output for later steps.
-          echo "metadata_path=package-metadata.yaml" >> $GITHUB_OUTPUT
+          echo "metadata_path=addon-metadata.yaml" >> $GITHUB_OUTPUT
 
-      - name: "Perform comprehensive package validation"
+      - name: "Perform comprehensive addon validation"
         run: |
-          python ./scripts/validate_package.py \
+          python ./scripts/validate_addon.py \
             ${{ steps.download_meta.outputs.metadata_path }} \
             --tag '${{ steps.payload.outputs.new_tag }}'
 
@@ -91,6 +91,6 @@ jobs:
           branch: "bot/update-${{ steps.payload.outputs.repo_name }}-${{ steps.payload.outputs.new_tag }}"
           title: "[Review Required] Registry Update for ${{ steps.payload.outputs.repo_name }}@${{ steps.payload.outputs.new_tag }}"
           body: |
-            Automated PR for community package update. All automated validations have passed.
+            Automated PR for community addon update. All automated validations have passed.
             Please perform a final manual review and merge.
           labels: automated, review-required
