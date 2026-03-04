@@ -147,6 +147,7 @@ def update_addon_entry(
         {
             "name": metadata["name"],
             "description": metadata.get("description", ""),
+            "api_version": metadata.get("api_version", 0),
             "depends": depends,
             "author": metadata.get("author", {}),
         }
@@ -175,6 +176,7 @@ def update_addon_entry(
     sorted_addon_entry = {
         "name": addon_entry["name"],
         "description": addon_entry.get("description", ""),
+        "api_version": addon_entry.get("api_version"),
         "depends": addon_entry.get("depends", []),
         "author": addon_entry.get("author", {}),
         "repository": addon_entry["repository"],
