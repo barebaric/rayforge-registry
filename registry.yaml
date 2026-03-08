@@ -1,4 +1,19 @@
 addons:
+  my_awesome_addon:
+    display_name: My Awesome Addon
+    description: A template addon demonstrating code and asset provisioning.
+    api_version: 1
+    depends:
+    - rayforge>=0.27.0
+    author:
+      name: Me Author
+      email: you@invalid.com
+    license:
+      name: MIT
+    repository: https://github.com/barebaric/rayforge-addon-template
+    latest_stable: v0.0.7
+    versions:
+    - v0.0.7
   rayforge-addon-deepnest:
     name: deepnest
     display_name: Deepnest
