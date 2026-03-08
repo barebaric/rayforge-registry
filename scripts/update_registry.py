@@ -150,6 +150,7 @@ def update_addon_entry(
             "api_version": metadata.get("api_version", 0),
             "depends": depends,
             "author": metadata.get("author", {}),
+            "license": metadata.get("license"),
         }
     )
 
@@ -179,6 +180,7 @@ def update_addon_entry(
         "api_version": addon_entry.get("api_version"),
         "depends": addon_entry.get("depends", []),
         "author": addon_entry.get("author", {}),
+        "license": addon_entry.get("license"),
         "repository": addon_entry["repository"],
         "latest_stable": addon_entry.get("latest_stable", ""),
         "versions": addon_entry["versions"],

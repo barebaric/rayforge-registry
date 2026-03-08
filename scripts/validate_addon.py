@@ -23,6 +23,7 @@ SCHEMA = {
     "depends": {"type": list, "required": True},
     "author": {"type": dict, "required": True},
     "provides": {"type": dict, "required": True},
+    "license": {"type": dict, "required": False},
 }
 
 AUTHOR_SCHEMA = {
@@ -232,6 +233,21 @@ def _check_provides(provides_data):
         print(f"   ... {len(assets)} asset(s) declared")
 
 
+def _check_license(license_data):
+    """Validates the optional 'license' section."""
+    if license_data is None:
+        return
+    if not isinstance(license_data, dict):
+        raise TypeError("'license' must be a dictionary.")
+    name = license_data.get("name")
+    if name is not None:
+        if not isinstance(name, str):
+            raise TypeError("'license.name' must be a string.")
+        if not name.strip():
+            raise ValueError("'license.name' must not be empty.")
+        print(f"   ... License '{name}' OK")
+
+
 def validate_content(data, tag=None, name=None):
     """Performs sanity checks on the metadata content."""
     print("-> Running content validation...")
@@ -245,6 +261,7 @@ def validate_content(data, tag=None, name=None):
     _check_depends(data.get("depends", []))
     _check_author_content(data.get("author", {}))
     _check_provides(data.get("provides", {}))
+    _check_license(data.get("license"))
     print("   ... Content OK")
 
 
