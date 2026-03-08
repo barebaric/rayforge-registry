@@ -4,6 +4,11 @@ repositories:
     contact: "knipknap@gmail.com"
     notes: "Official assets maintained by the Rayforge core team."
 
+  - repo: barebaric/rayforge-addon-deepnest
+    mode: direct
+    contact: "knipknap@gmail.com"
+    notes: "Official addon template maintained by the Rayforge core team."
+
   - repo: barebaric/rayforge-addon-template
     mode: direct
     contact: "knipknap@gmail.com"
