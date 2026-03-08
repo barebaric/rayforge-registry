@@ -126,7 +126,8 @@ def update_addon_entry(
         repo: The repository name (e.g., 'owner/name').
         tag: The new version tag (e.g., 'v1.2.3').
     """
-    addon_id = Path(repo).name
+    addon_name = metadata["name"]
+    repository_url = f"https://github.com/{repo}"
     # Ensure 'addons' key exists at the top level.
     if "addons" not in registry_data:
         registry_data["addons"] = {}
@@ -134,8 +135,8 @@ def update_addon_entry(
 
     # Get or create the entry for this addon.
     addon_entry = addons.get(
-        addon_id,
-        {"repository": f"https://github.com/{repo}", "versions": []},
+        addon_name,
+        {"repository": repository_url, "versions": []},
     )
 
     # Update static metadata from the addon file.
@@ -145,13 +146,13 @@ def update_addon_entry(
 
     addon_entry.update(
         {
-            "name": metadata["name"],
-            "display_name": metadata.get("display_name", metadata["name"]),
+            "display_name": metadata.get("display_name", addon_name),
             "description": metadata.get("description", ""),
             "api_version": metadata.get("api_version", 0),
             "depends": depends,
             "author": metadata.get("author", {}),
             "license": metadata.get("license"),
+            "repository": repository_url,
         }
     )
 
@@ -169,15 +170,14 @@ def update_addon_entry(
         addon_entry["latest_stable"] = addon_entry["versions"][0]
     except ValueError as e:
         print(
-            f"WARNING: Could not sort versions for '{addon_id}' due to "
+            f"WARNING: Could not sort versions for '{addon_name}' due to "
             f"invalid semantic version. {e}",
             file=sys.stderr,
         )
 
     # Sort the keys within this specific addon entry for consistency
     sorted_addon_entry = {
-        "name": addon_entry["name"],
-        "display_name": addon_entry.get("display_name", addon_entry["name"]),
+        "display_name": addon_entry.get("display_name", addon_name),
         "description": addon_entry.get("description", ""),
         "api_version": addon_entry.get("api_version"),
         "depends": addon_entry.get("depends", []),
@@ -188,7 +188,7 @@ def update_addon_entry(
         "versions": addon_entry["versions"],
     }
 
-    addons[addon_id] = sorted_addon_entry
+    addons[addon_name] = sorted_addon_entry
 
     registry_data["addons"] = dict(sorted(addons.items()))
 
