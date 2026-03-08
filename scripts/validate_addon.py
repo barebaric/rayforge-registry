@@ -20,7 +20,7 @@ SCHEMA = {
     "name": {"type": str, "required": True},
     "description": {"type": str, "required": True},
     "api_version": {"type": int, "required": True},
-    "depends": {"type": list, "required": True},
+    "depends": {"type": list, "required": False},
     "author": {"type": dict, "required": True},
     "provides": {"type": dict, "required": True},
     "license": {"type": dict, "required": False},
@@ -40,8 +40,11 @@ def _check_non_empty_str(value, key_name):
 
 def _check_depends(depends_data):
     """Validates the 'depends' section."""
-    if not depends_data or not isinstance(depends_data, list):
-        raise ValueError("'depends' must be a non-empty list.")
+    if not depends_data:
+        return
+
+    if not isinstance(depends_data, list):
+        raise ValueError("'depends' must be a list.")
 
     for dep in depends_data:
         if not isinstance(dep, str):
