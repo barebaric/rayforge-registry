@@ -18,6 +18,7 @@ METADATA_FILENAME = "rayforge-addon.yaml"
 
 SCHEMA = {
     "name": {"type": str, "required": True},
+    "display_name": {"type": str, "required": True},
     "description": {"type": str, "required": True},
     "api_version": {"type": int, "required": True},
     "depends": {"type": list, "required": False},
@@ -259,6 +260,7 @@ def validate_content(data, tag=None, name=None):
     _check_api_version(data.get("api_version"))
 
     _check_non_empty_str(data.get("name"), "name")
+    _check_non_empty_str(data.get("display_name"), "display_name")
     _check_non_empty_str(data.get("description"), "description")
 
     _check_depends(data.get("depends", []))

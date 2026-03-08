@@ -146,6 +146,7 @@ def update_addon_entry(
     addon_entry.update(
         {
             "name": metadata["name"],
+            "display_name": metadata.get("display_name", metadata["name"]),
             "description": metadata.get("description", ""),
             "api_version": metadata.get("api_version", 0),
             "depends": depends,
@@ -176,6 +177,7 @@ def update_addon_entry(
     # Sort the keys within this specific addon entry for consistency
     sorted_addon_entry = {
         "name": addon_entry["name"],
+        "display_name": addon_entry.get("display_name", addon_entry["name"]),
         "description": addon_entry.get("description", ""),
         "api_version": addon_entry.get("api_version"),
         "depends": addon_entry.get("depends", []),
