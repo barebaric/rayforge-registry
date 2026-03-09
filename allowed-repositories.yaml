@@ -7,7 +7,10 @@ repositories:
   - repo: barebaric/rayforge-addon-deepnest
     mode: direct
     contact: "knipknap@gmail.com"
-    notes: "Official addon template maintained by the Rayforge core team."
+
+  - repo: barebaric/rayforge-addon-smart-stock
+    mode: direct
+    contact: "knipknap@gmail.com"
 
   - repo: barebaric/rayforge-addon-template
     mode: direct
