@@ -21,6 +21,21 @@ addons:
     versions:
     - v1.0.2
     - v1.0.1
+  my_addon:
+    display_name: My Addon
+    description: A template addon demonstrating code and asset provisioning.
+    api_version: 6
+    depends:
+    - rayforge>=0.27.0
+    author:
+      name: Me Author
+      email: you@invalid.com
+    license:
+      name: MIT
+    repository: https://github.com/barebaric/rayforge-addon-template
+    latest_stable: v0.0.8
+    versions:
+    - v0.0.8
   my_awesome_addon:
     display_name: My Awesome Addon
     description: A template addon demonstrating code and asset provisioning.
