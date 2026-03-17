@@ -96,6 +96,7 @@ jobs:
           git config --global user.email "noreply@barebaric.com"
           git add registry.yaml
           git commit -m "bot: Publish ${{ steps.payload.outputs.repo_name }}@${{ steps.payload.outputs.new_tag }}"
+          git pull --rebase origin main
           git push
 
       - name: "Deploy: Create Pull Request for Review"
