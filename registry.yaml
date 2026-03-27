@@ -39,6 +39,21 @@ addons:
     latest_stable: v0.0.8
     versions:
     - v0.0.8
+  projector_mode:
+    display_name: Projector Mode
+    description: Display cutting area on external projector/monitor for alignment
+    api_version: 9
+    depends:
+    - rayforge>=0.27.0
+    author:
+      name: Rayforge Team
+      email: noreply@rayforge.org
+    license:
+      name: MIT
+    repository: https://github.com/barebaric/rayforge-addon-projector
+    latest_stable: v1.0.0
+    versions:
+    - v1.0.0
   smart_stock:
     display_name: Smart Stock
     description: Automatically create stock items from camera images using computer
