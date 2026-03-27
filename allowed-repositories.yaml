@@ -8,6 +8,10 @@ repositories:
     mode: direct
     contact: "knipknap@gmail.com"
 
+  - repo: barebaric/rayforge-addon-projector
+    mode: direct
+    contact: "knipknap@gmail.com"
+
   - repo: barebaric/rayforge-addon-smart-stock
     mode: direct
     contact: "knipknap@gmail.com"
