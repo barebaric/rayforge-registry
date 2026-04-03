@@ -19,11 +19,16 @@ addons:
     repository: https://github.com/barebaric/rayforge-addon-deepnest
     latest_stable: v1.1.0
     versions:
-    - v1.1.0
-    - v1.0.4
-    - v1.0.3
-    - v1.0.2
-    - v1.0.1
+    - version: v1.1.0
+      api_version: 2
+    - version: v1.0.4
+      api_version: 2
+    - version: v1.0.3
+      api_version: 2
+    - version: v1.0.2
+      api_version: 2
+    - version: v1.0.1
+      api_version: 2
   my_addon:
     display_name: My Addon
     description: A template addon demonstrating code and asset provisioning.
@@ -38,7 +43,8 @@ addons:
     repository: https://github.com/barebaric/rayforge-addon-template
     latest_stable: v0.0.8
     versions:
-    - v0.0.8
+    - version: v0.0.8
+      api_version: 6
   projector_mode:
     display_name: Projector Mode
     description: Display cutting area on external projector/monitor for alignment
@@ -53,7 +59,8 @@ addons:
     repository: https://github.com/barebaric/rayforge-addon-projector
     latest_stable: v1.0.0
     versions:
-    - v1.0.0
+    - version: v1.0.0
+      api_version: 9
   smart_stock:
     display_name: Smart Stock
     description: Automatically create stock items from camera images using computer
@@ -76,6 +83,9 @@ addons:
     repository: https://github.com/barebaric/rayforge-addon-smart-stock
     latest_stable: v1.0.2
     versions:
-    - v1.0.2
-    - v1.0.1
-    - v1.0.0
+    - version: v1.0.2
+      api_version: 6
+    - version: v1.0.1
+      api_version: 6
+    - version: v1.0.0
+      api_version: 6

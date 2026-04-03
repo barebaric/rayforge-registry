@@ -112,6 +112,28 @@ def save_yaml_file(data: Dict[str, Any], file_path: Path):
         )
 
 
+def _get_version_tag(entry):
+    """Extract the version tag string from a version entry."""
+    if isinstance(entry, dict):
+        return entry.get("version", "")
+    return str(entry)
+
+
+def _parse_version_entry(entry):
+    """
+    Normalize a version entry to a dict.
+
+    Supports both the legacy format (plain string) and the structured
+    format (dict with 'version', 'api_version').
+    """
+    if isinstance(entry, dict):
+        return {
+            "version": entry.get("version", ""),
+            "api_version": entry.get("api_version", 0),
+        }
+    return {"version": str(entry), "api_version": 0}
+
+
 def update_addon_entry(
     registry_data: Dict, metadata: Dict, repo: str, tag: str
 ):
@@ -144,11 +166,13 @@ def update_addon_entry(
     if isinstance(depends, str):
         depends = [depends]
 
+    api_version = metadata.get("api_version", 0)
+
     addon_entry.update(
         {
             "display_name": metadata.get("display_name", addon_name),
             "description": metadata.get("description", ""),
-            "api_version": metadata.get("api_version", 0),
+            "api_version": api_version,
             "depends": depends,
             "author": metadata.get("author", {}),
             "license": metadata.get("license"),
@@ -156,18 +180,39 @@ def update_addon_entry(
         }
     )
 
-    # Add the new version if it doesn't already exist.
-    if tag not in addon_entry["versions"]:
-        addon_entry["versions"].append(tag)
+    # Migrate legacy string-based version entries to structured dicts.
+    addon_entry["versions"] = [
+        _parse_version_entry(v) for v in addon_entry["versions"]
+    ]
+
+    # Build the new structured version entry.
+    new_version_entry = {
+        "version": tag,
+        "api_version": api_version,
+    }
+
+    # Replace existing entry for this tag, or append.
+    found = False
+    for i, existing in enumerate(addon_entry["versions"]):
+        if _get_version_tag(existing) == tag:
+            addon_entry["versions"][i] = new_version_entry
+            found = True
+            break
+    if not found:
+        addon_entry["versions"].append(new_version_entry)
 
     # Sort versions using semantic versioning to ensure correctness.
     try:
         addon_entry["versions"].sort(
-            key=lambda v: semver.VersionInfo.parse(v.lstrip("v")),
+            key=lambda v: semver.VersionInfo.parse(
+                _get_version_tag(v).lstrip("v")
+            ),
             reverse=True,
         )
         # The highest valid version is the latest stable release.
-        addon_entry["latest_stable"] = addon_entry["versions"][0]
+        addon_entry["latest_stable"] = _get_version_tag(
+            addon_entry["versions"][0]
+        )
     except ValueError as e:
         print(
             f"WARNING: Could not sort versions for '{addon_name}' due to "
