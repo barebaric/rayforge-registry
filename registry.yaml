@@ -71,7 +71,7 @@ addons:
     display_name: Smart Stock
     description: Automatically create stock items from camera images using computer
       vision
-    api_version: 6
+    api_version: 12
     depends:
     - rayforge>=1.2.0
     author:
@@ -87,8 +87,10 @@ addons:
       - '27607754'
       - '27607776'
     repository: https://github.com/barebaric/rayforge-addon-smart-stock
-    latest_stable: v1.0.2
+    latest_stable: v1.1.0
     versions:
+    - version: v1.1.0
+      api_version: 12
     - version: v1.0.2
       api_version: 6
     - version: v1.0.1
