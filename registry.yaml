@@ -17,8 +17,10 @@ addons:
       - '27607754'
       - '27607776'
     repository: https://github.com/barebaric/rayforge-addon-deepnest
-    latest_stable: v1.2.0
+    latest_stable: v1.2.1
     versions:
+    - version: v1.2.1
+      api_version: 12
     - version: v1.2.0
       api_version: 12
     - version: v1.1.0
