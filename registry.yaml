@@ -56,7 +56,7 @@ addons:
   projector_mode:
     display_name: Projector Mode
     description: Display cutting area on external projector/monitor for alignment
-    api_version: 13
+    api_version: 15
     depends: []
     author:
       name: Rayforge Team
@@ -64,8 +64,10 @@ addons:
     license:
       name: MIT
     repository: https://github.com/barebaric/rayforge-addon-projector
-    latest_stable: v1.3.0
+    latest_stable: v1.3.1
     versions:
+    - version: v1.3.1
+      api_version: 15
     - version: v1.3.0
       api_version: 13
     - version: v1.2.0
