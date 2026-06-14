@@ -97,8 +97,10 @@ addons:
       - '27607754'
       - '27607776'
     repository: https://github.com/barebaric/rayforge-addon-smart-stock
-    latest_stable: v1.2.1
+    latest_stable: v1.2.2
     versions:
+    - version: v1.2.2
+      api_version: 15
     - version: v1.2.1
       api_version: 15
     - version: v1.2.0
