@@ -2,7 +2,7 @@ addons:
   deepnest:
     display_name: Deepnest
     description: Nesting layout functionality using deepnest algorithm
-    api_version: 15
+    api_version: 16
     depends: []
     author:
       name: Samuel Abels
@@ -17,8 +17,10 @@ addons:
       - '27607754'
       - '27607776'
     repository: https://github.com/barebaric/rayforge-addon-deepnest
-    latest_stable: v1.3.3
+    latest_stable: v1.4.0
     versions:
+    - version: v1.4.0
+      api_version: 16
     - version: v1.3.3
       api_version: 15
     - version: v1.3.2
