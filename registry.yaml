@@ -76,8 +76,10 @@ addons:
     license:
       name: MIT
     repository: https://github.com/barebaric/rayforge-addon-projector
-    latest_stable: v1.4.1
+    latest_stable: v1.4.2
     versions:
+    - version: v1.4.2
+      api_version: 18
     - version: v1.4.1
       api_version: 18
     - version: v1.4.0
