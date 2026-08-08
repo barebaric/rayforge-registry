@@ -101,7 +101,7 @@ jobs:
 
       - name: "Deploy: Create Pull Request for Review"
         if: steps.auth.outputs.commit_mode == 'pr'
-        uses: peter-evans/create-pull-request@v5
+        uses: peter-evans/create-pull-request@v8
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: "feat: Add ${{ steps.payload.outputs.repo_name }}@${{ steps.payload.outputs.new_tag }}"
