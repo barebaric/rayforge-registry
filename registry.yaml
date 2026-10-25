@@ -55,6 +55,30 @@ addons:
       api_version: 2
     - version: v1.0.1
       api_version: 2
+  job_commands:
+    display_name: Job Event Commands
+    description: Run shell commands when a job starts, reports progress, pauses, resumes,
+      finishes or fails, and when the machine connects or disconnects.
+    api_version: 24
+    depends:
+    - rayforge>=1.13.0
+    author:
+      name: Szabolcs Gyuris
+      email: github@oregpreshaz.eu
+    license:
+      name: MIT
+      assets:
+      - type: icons
+        path: ./assets/icons/
+        description: Icons for setup window.
+      - type: ha-helper
+        path: ./assets/ha-helper/
+        description: Some helper scripts and templates to integrate to Home Assistant.
+    repository: https://github.com/szimszon/rayforge-job-commands
+    latest_stable: v0.0.2
+    versions:
+    - version: v0.0.2
+      api_version: 24
   my_addon:
     display_name: My Addon
     description: A template addon demonstrating code and asset provisioning.
