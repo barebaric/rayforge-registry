@@ -1,0 +1,92 @@
+name: Poll Addon Releases
+
+on:
+  schedule:
+    - cron: "23 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: poll-addon-releases
+  cancel-in-progress: false
+
+jobs:
+  poll:
+    name: Discover and Publish New Releases
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the registry repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python and Dependencies
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install build dependencies
+        run: pip install -r requirements-dev.txt
+
+      - name: Poll allowlisted repositories for new tags
+        id: poll
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python scripts/poll_releases.py \
+            --result-file "$RUNNER_TEMP/poll-result.json"
+
+      - name: Determine commit mode
+        id: mode
+        if: ${{ !cancelled() }}
+        env:
+          RESULT_FILE: ${{ runner.temp }}/poll-result.json
+        run: |
+          echo "pr_mode=false" >> "$GITHUB_OUTPUT"
+          echo "pr_body=Automated PR: the scheduled release poll found no pending updates." >> "$GITHUB_OUTPUT"
+          if [ ! -f "$RESULT_FILE" ]; then
+            exit 0
+          fi
+          if [ "$(jq '[.updates[] | select(.mode == "pr")] | length' "$RESULT_FILE")" -gt 0 ]; then
+            echo "pr_mode=true" >> "$GITHUB_OUTPUT"
+          fi
+          {
+            echo "pr_body<<POLL_BODY_EOF"
+            echo "Automated PR: the scheduled release poll found new addon"
+            echo "releases. All automated validations have passed."
+            echo ""
+            echo "## Pending releases"
+            jq -r '.updates[] | "- \(.repo)@\(.tag)"' "$RESULT_FILE"
+            echo ""
+            echo "Please perform a final manual review and merge."
+            echo "POLL_BODY_EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: "Deploy: Commit and Push Directly"
+        if: ${{ !cancelled() && steps.mode.outputs.pr_mode == 'false' }}
+        run: |
+          if git diff --quiet registry.yaml; then
+            echo "Nothing to publish."
+            exit 0
+          fi
+          SUBJECT=$(jq -r 'if (.updates | length) == 1 then "bot: Publish \(.updates[0].repo)@\(.updates[0].tag)" else "bot: Publish \(.updates | length) addon releases" end' "$RUNNER_TEMP/poll-result.json")
+          BODY=$(jq -r '.updates | map("- \(.repo)@\(.tag)") | join("\n")' "$RUNNER_TEMP/poll-result.json")
+          git config --global user.name "Rayforge Registry Bot"
+          git config --global user.email "noreply@barebaric.com"
+          git add registry.yaml
+          git commit -m "$SUBJECT" -m "$BODY"
+          git pull --rebase origin main
+          git push
+
+      - name: "Deploy: Create Pull Request for Review"
+        if: ${{ !cancelled() && steps.mode.outputs.pr_mode == 'true' }}
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "feat: Add pending addon releases from release poll"
+          branch: "bot/poll-releases"
+          title: "[Review Required] New addon releases found by release poll"
+          body: ${{ steps.mode.outputs.pr_body }}
+          labels: automated, review-required

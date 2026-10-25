@@ -17,6 +17,9 @@ dist/
 *.egg-info/
 *.whl
 
+# Release poll artifacts
+poll-result.json
+
 # IDE / Editor configuration
 .idea/
 .vscode/

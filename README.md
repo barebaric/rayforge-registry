@@ -11,11 +11,11 @@ When you are ready to publish a package, follow these steps:
 
 ### Step 1: Create your package as a GitHub repository
 
-Ensure that you use our template, because it includes the necessary GitHub
-workflow to publish your package automatically.
+Ensure that you use our template, because it sets up the repository
+structure and metadata file that the registry expects.
 
 ```bash
-git clone https://github.com/barebaric/rayforge-package-template.git
+git clone https://github.com/barebaric/rayforge-addon-template.git
 ```
 
 Then adapt to create your package!
@@ -27,27 +27,7 @@ This is a one-time step. Simply [edit allowed-repositories.yaml](allowed-reposit
 by adding your repository.
 
 
-### Step 3: Set Up Release Token (One-Time Setup)
-
-The automated release workflow needs a token to announce your releases.
-
-1.  **Create a Personal Access Token (PAT):**
-
-    - Go to GitHub Settings > Developer settings > Personal access tokens > Tokens (classic).
-    - Click **"Generate new token"** (classic).
-    - Give it a name (e.g., `Rayforge Registry Announcer`).
-    - Set an expiration date.
-    - Under **"Select scopes,"** check only the box for **`repo`**.
-    - Click **"Generate token"** and copy it.
-
-2.  **Add the Token to Repository Secrets:**
-    - Go to your repository's **Settings > Secrets and variables > Actions**.
-    - Click **"New repository secret"**.
-    - **Name:** `REGISTRY_ACCESS_TOKEN`
-    - **Secret:** Paste your token.
-
-
-### Step 4: Done. Your packages are now released whenever you push a version tag
+### Step 3: Done. Your packages are now released whenever you push a version tag
 
 Publishing is as simple as pushing a Git tag.
 
@@ -61,6 +41,10 @@ git tag v1.1.0
 git push origin v1.1.0
 ```
 
-That's it! The GitHub Action in your repository will automatically submit
-your new version to this central Rayforge Registry, which will pull your
-package file and update the registry.yaml here in the repository.
+That's it! No token or secret is needed. A scheduled workflow in this
+repository ([poll-releases.yml](.github/workflows/poll-releases.yml)) polls
+every listed repository hourly for new version tags. When it finds one, it
+downloads your `rayforge-addon.yaml`, validates it, and publishes the new
+version: trusted repositories are pushed directly, and new community
+repositories are published through a review pull request here in the
+registry.
