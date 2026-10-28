@@ -19,3 +19,7 @@ repositories:
   - repo: szimszon/rayforge-job-commands
     mode: pr
     contact: "github@oregpreshaz.eu"
+
+  - repo: adihack/rayforge-mcp
+    mode: pr
+    contact: "adriansoltys@gmail.com"
