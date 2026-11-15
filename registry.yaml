@@ -136,6 +136,12 @@ addons:
   projector_mode:
     display_name: Projector Mode
     description: Display cutting area on external projector/monitor for alignment
+    long_description: "Projector Mode displays your cutting area on a separate window,\n\
+      designed for an external projector or secondary monitor.\n\n- Projects the toolpaths\
+      \ directly onto your material for easy\n  alignment\n- Shows workpieces in bright\
+      \ green on a black background, with the\n  axis extent frame and work origin\n\
+      - Updates in real time as you edit the canvas\n- Fullscreen mode for a clean\
+      \ projection\n\nOpen it via **View - Show Projector Dialog**.\n"
     api_version: 21
     depends: []
     author:
@@ -144,8 +150,12 @@ addons:
     license:
       name: MIT
     repository: https://github.com/barebaric/rayforge-addon-projector
-    latest_stable: v1.5.0
+    screenshots:
+    - https://raw.githubusercontent.com/barebaric/rayforge-addon-projector/v1.6.0/screenshots/screenshot.webp
+    latest_stable: v1.6.0
     versions:
+    - version: v1.6.0
+      api_version: 21
     - version: v1.5.0
       api_version: 21
     - version: v1.4.3
