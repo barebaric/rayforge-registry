@@ -24,6 +24,7 @@ import yaml
 
 import update_registry
 import validate_addon
+import verify_screenshots
 from get_commit_mode import get_commit_mode
 
 ALLOWLIST_FILE = Path("allowed-repositories.yaml")
@@ -224,6 +225,7 @@ def poll_repository(
         metadata = download_metadata(repo, tag)
         validate_addon.validate_schema(metadata)
         validate_addon.validate_content(metadata, tag=tag)
+        verify_screenshots.verify_screenshots(repo, tag, metadata)
     except (
         OSError,
         ValueError,

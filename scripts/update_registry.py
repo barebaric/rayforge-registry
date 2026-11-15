@@ -9,6 +9,7 @@ version information with improved, human-readable formatting.
 
 import argparse
 import sys
+import urllib.parse
 from pathlib import Path
 from typing import Any, Dict
 
@@ -16,6 +17,22 @@ import semver
 import yaml
 
 REGISTRY_FILE = Path("registry.yaml")
+
+RAW_URL = "https://raw.githubusercontent.com/{repo}/{tag}/{path}"
+
+
+def resolve_screenshot_url(repo: str, tag: str, path: str) -> str:
+    """
+    Resolves a repo-relative screenshot path to a raw URL at a tag.
+
+    Pinning the URL to the release tag keeps screenshots stable even
+    when the addon's default branch changes later.
+    """
+    return RAW_URL.format(
+        repo=repo,
+        tag=urllib.parse.quote(tag, safe=""),
+        path=urllib.parse.quote(path, safe="/"),
+    )
 
 
 class NiceDumper(yaml.SafeDumper):
@@ -168,15 +185,22 @@ def update_addon_entry(
 
     api_version = metadata.get("api_version", 0)
 
+    screenshots = [
+        resolve_screenshot_url(repo, tag, path)
+        for path in metadata.get("screenshots") or []
+    ]
+
     addon_entry.update(
         {
             "display_name": metadata.get("display_name", addon_name),
             "description": metadata.get("description", ""),
+            "long_description": metadata.get("long_description", ""),
             "api_version": api_version,
             "depends": depends,
             "author": metadata.get("author", {}),
             "license": metadata.get("license"),
             "repository": repository_url,
+            "screenshots": screenshots,
         }
     )
 
@@ -224,14 +248,20 @@ def update_addon_entry(
     sorted_addon_entry = {
         "display_name": addon_entry.get("display_name", addon_name),
         "description": addon_entry.get("description", ""),
+        "long_description": addon_entry.get("long_description", ""),
         "api_version": addon_entry.get("api_version"),
         "depends": addon_entry.get("depends", []),
         "author": addon_entry.get("author", {}),
         "license": addon_entry.get("license"),
         "repository": addon_entry["repository"],
+        "screenshots": addon_entry.get("screenshots", []),
         "latest_stable": addon_entry.get("latest_stable", ""),
         "versions": addon_entry["versions"],
     }
+    if not sorted_addon_entry["long_description"]:
+        del sorted_addon_entry["long_description"]
+    if not sorted_addon_entry["screenshots"]:
+        del sorted_addon_entry["screenshots"]
 
     addons[addon_name] = sorted_addon_entry
 

@@ -16,15 +16,21 @@ import yaml
 
 METADATA_FILENAME = "rayforge-addon.yaml"
 
+MAX_SCREENSHOTS = 5
+MAX_LONG_DESCRIPTION = 2000
+SCREENSHOT_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp"}
+
 SCHEMA = {
     "name": {"type": str, "required": True},
     "display_name": {"type": str, "required": True},
     "description": {"type": str, "required": True},
+    "long_description": {"type": str, "required": False},
     "api_version": {"type": int, "required": True},
     "depends": {"type": list, "required": False},
     "author": {"type": dict, "required": True},
     "provides": {"type": dict, "required": True},
     "license": {"type": dict, "required": False},
+    "screenshots": {"type": list, "required": False},
 }
 
 AUTHOR_SCHEMA = {
@@ -262,6 +268,54 @@ def _check_license(license_data):
         print(f"   ... License '{name}' OK")
 
 
+def _check_long_description(value):
+    """Validates the optional 'long_description' field."""
+    if value is None:
+        return
+    if not isinstance(value, str):
+        raise TypeError("'long_description' must be a string.")
+    if len(value) > MAX_LONG_DESCRIPTION:
+        raise ValueError(
+            f"'long_description' exceeds {MAX_LONG_DESCRIPTION} characters."
+        )
+
+
+def _check_screenshot_path(path, index):
+    """Validates one repo-relative screenshot path."""
+    key = f"screenshots[{index}]"
+    if not isinstance(path, str) or not path.strip():
+        raise ValueError(f"'{key}' must be a non-empty string.")
+    if path.startswith("/") or "://" in path:
+        raise ValueError(
+            f"'{key}' must be a repo-relative path, not a URL: {path}"
+        )
+    parts = path.split("/")
+    if ".." in parts or "." in parts or "" in parts:
+        raise ValueError(f"'{key}' contains an invalid path segment: {path}")
+    extension = Path(path).suffix.lower()
+    if extension not in SCREENSHOT_EXTENSIONS:
+        allowed = ", ".join(sorted(SCREENSHOT_EXTENSIONS))
+        raise ValueError(
+            f"'{key}' has unsupported extension '{extension}'. "
+            f"Allowed: {allowed}."
+        )
+
+
+def _check_screenshots(screenshots):
+    """Validates the optional 'screenshots' list."""
+    if not screenshots:
+        return
+    if not isinstance(screenshots, list):
+        raise TypeError("'screenshots' must be a list.")
+    if len(screenshots) > MAX_SCREENSHOTS:
+        raise ValueError(
+            f"'screenshots' lists more than {MAX_SCREENSHOTS} entries."
+        )
+    for index, path in enumerate(screenshots):
+        _check_screenshot_path(path, index)
+    print(f"   ... {len(screenshots)} screenshot(s) declared")
+
+
 def validate_content(data, tag=None, name=None):
     """Performs sanity checks on the metadata content."""
     print("-> Running content validation...")
@@ -277,6 +331,8 @@ def validate_content(data, tag=None, name=None):
     _check_author_content(data.get("author", {}))
     _check_provides(data.get("provides", {}))
     _check_license(data.get("license"))
+    _check_long_description(data.get("long_description"))
+    _check_screenshots(data.get("screenshots"))
     print("   ... Content OK")
 
 
