@@ -60,7 +60,8 @@ jobs:
             echo "## Pending releases"
             jq -r '.updates[] | "- \(.repo)@\(.tag)"' "$RESULT_FILE"
             echo ""
-            echo "Please perform a final manual review and merge."
+            echo "This PR is merged automatically once CI validation"
+            echo "passes."
             echo "POLL_BODY_EOF"
           } >> "$GITHUB_OUTPUT"
 
@@ -80,13 +81,73 @@ jobs:
           git pull --rebase origin main
           git push
 
-      - name: "Deploy: Create Pull Request for Review"
+      - name: "Deploy: Create Pull Request"
+        id: cpr
         if: ${{ !cancelled() && steps.mode.outputs.pr_mode == 'true' }}
         uses: peter-evans/create-pull-request@v8
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: "feat: Add pending addon releases from release poll"
           branch: "bot/poll-releases"
-          title: "[Review Required] New addon releases found by release poll"
+          title: "New addon releases found by release poll"
           body: ${{ steps.mode.outputs.pr_body }}
-          labels: automated, review-required
+          labels: automated
+
+      - name: Validate registry changes
+        id: validate
+        if: ${{ !cancelled() && (steps.cpr.outputs.pull-request-operation == 'created' || steps.cpr.outputs.pull-request-operation == 'updated') }}
+        run: |
+          git fetch origin main
+          git show origin/main:registry.yaml > "$RUNNER_TEMP/base-registry.yaml"
+          python scripts/validate_registry.py \
+            --base-file "$RUNNER_TEMP/base-registry.yaml"
+
+      - name: Auto-merge validated pull request
+        id: merge
+        if: ${{ !cancelled() && (steps.cpr.outputs.pull-request-operation == 'created' || steps.cpr.outputs.pull-request-operation == 'updated') }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_URL: ${{ steps.cpr.outputs.pull-request-url }}
+        run: |
+          STATE=$(gh pr view "$PR_URL" --json state --jq .state)
+          if [ "$STATE" != "OPEN" ]; then
+            echo "Pull request is $STATE; nothing to merge."
+            exit 0
+          fi
+          LABELS=$(gh pr view "$PR_URL" --json labels --jq '.labels[].name')
+          if ! echo "$LABELS" | grep -qx automated; then
+            echo "Pull request is not labeled 'automated'; leaving it open."
+            exit 0
+          fi
+          if gh pr merge "$PR_URL" --merge --delete-branch; then
+            echo "merged=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "merged=false" >> "$GITHUB_OUTPUT"
+            gh pr comment "$PR_URL" --body "Auto-merge failed, likely due to a merge conflict with main. The next release poll will refresh this branch and retry; you can also merge manually."
+          fi
+
+      - name: Notify new pull request
+        if: ${{ always() && steps.cpr.outputs.pull-request-operation == 'created' }}
+        env:
+          NOTIFY_WEBHOOK_URL: ${{ secrets.NOTIFY_WEBHOOK_URL }}
+          PR_URL: ${{ steps.cpr.outputs.pull-request-url }}
+          RESULT_FILE: ${{ runner.temp }}/poll-result.json
+        run: |
+          if [ "${{ steps.validate.outcome }}" = "failure" ]; then
+            STATUS="⚠️ Validation failed - manual review required"
+          elif [ "${{ steps.validate.outcome }}" = "cancelled" ]; then
+            STATUS="⚠️ Workflow cancelled - PR left open"
+          elif [ "${{ steps.merge.outputs.merged }}" = "true" ]; then
+            STATUS="✅ CI passed - merged automatically"
+          else
+            STATUS="⚠️ Not merged automatically - check the PR"
+          fi
+          DETAILS=""
+          if [ -f "$RESULT_FILE" ]; then
+            DETAILS=$(jq -r '.updates | map("- \(.repo)@\(.tag)") | join("\n")' "$RESULT_FILE")
+          fi
+          python scripts/notify_webhook.py \
+            --title "New addon releases found by release poll" \
+            --url "$PR_URL" \
+            --status "$STATUS" \
+            --details "$DETAILS"
