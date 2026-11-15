@@ -58,7 +58,7 @@ declared in your `rayforge-addon.yaml`:
 
 ```yaml
 long_description: |
-  A longer, plain-text description of what your addon does.
+  A longer description of what your addon does, written in Markdown.
   It is shown in the addon detail view, below the screenshots.
 
 screenshots:
@@ -68,7 +68,8 @@ screenshots:
 
 Rules:
 
-- `long_description` is plain text with at most 2000 characters.
+- `long_description` is Markdown with at most 2000 characters. Headings,
+  lists, emphasis, links, and code blocks are supported.
 - `screenshots` lists up to 5 repo-relative paths to PNG, JPEG, or WebP
   images. Absolute paths and URLs are not allowed.
 - Each image must be at most 3 MB.
