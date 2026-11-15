@@ -46,8 +46,8 @@ repository ([poll-releases.yml](.github/workflows/poll-releases.yml)) polls
 every listed repository hourly for new version tags. When it finds one, it
 downloads your `rayforge-addon.yaml`, validates it, and publishes the new
 version: trusted repositories are pushed directly, and new community
-repositories are published through a review pull request here in the
-registry.
+repositories are published through an automated pull request that is
+merged automatically once CI validation passes.
 
 
 ## Addon Details: Long Description and Screenshots
