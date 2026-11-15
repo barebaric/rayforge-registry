@@ -82,6 +82,13 @@ jobs:
             . \
             --tag '${{ steps.payload.outputs.new_tag }}'
 
+      - name: "Verify screenshots are fetchable"
+        run: |
+          python ./scripts/verify_screenshots.py \
+            ${{ steps.download_meta.outputs.metadata_path }} \
+            --repo '${{ steps.payload.outputs.repo_name }}' \
+            --tag '${{ steps.payload.outputs.new_tag }}'
+
       - name: Update registry.yaml file
         run: |
           python ./scripts/update_registry.py \

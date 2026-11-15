@@ -48,3 +48,33 @@ downloads your `rayforge-addon.yaml`, validates it, and publishes the new
 version: trusted repositories are pushed directly, and new community
 repositories are published through a review pull request here in the
 registry.
+
+
+## Addon Details: Long Description and Screenshots
+
+When a user clicks an addon in Rayforge's addon manager, a detail view
+opens with a longer description and screenshots. Both are optional and
+declared in your `rayforge-addon.yaml`:
+
+```yaml
+long_description: |
+  A longer, plain-text description of what your addon does.
+  It is shown in the addon detail view, below the screenshots.
+
+screenshots:
+  - docs/screenshots/overview.png
+  - docs/screenshots/settings.png
+```
+
+Rules:
+
+- `long_description` is plain text with at most 2000 characters.
+- `screenshots` lists up to 5 repo-relative paths to PNG, JPEG, or WebP
+  images. Absolute paths and URLs are not allowed.
+- Each image must be at most 3 MB.
+
+The images must be committed to your repository. When a release is
+published, the registry resolves each path to a raw GitHub URL pinned to
+the release tag and verifies that it can be downloaded. Releases with
+missing or invalid screenshots are rejected, so keep the files in place
+for every tag you publish.
