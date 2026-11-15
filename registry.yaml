@@ -180,6 +180,12 @@ addons:
     display_name: Smart Stock
     description: Automatically create stock items from camera images using computer
       vision
+    long_description: "Smart Stock uses computer vision to detect material placed\
+      \ on your\nlaser bed and creates matching stock items in your document.\n\n\
+      - Compares a reference image of the empty bed against the live\n  camera view\n\
+      - Identifies the outlines of physical stock\n- Generates correctly positioned\
+      \ stock items with the right shape\n  and size\n\nRequires a configured and\
+      \ calibrated camera. Open it via\n**Tools - Detect Stock from Camera**.\n"
     api_version: 18
     depends: []
     author:
@@ -195,8 +201,12 @@ addons:
       - '27607754'
       - '27607776'
     repository: https://github.com/barebaric/rayforge-addon-smart-stock
-    latest_stable: v1.4.0
+    screenshots:
+    - https://raw.githubusercontent.com/barebaric/rayforge-addon-smart-stock/v1.5.0/screenshots/screenshot.png
+    latest_stable: v1.5.0
     versions:
+    - version: v1.5.0
+      api_version: 18
     - version: v1.4.0
       api_version: 18
     - version: v1.3.1
