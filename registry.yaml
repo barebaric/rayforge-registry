@@ -79,6 +79,23 @@ addons:
     versions:
     - version: v0.0.2
       api_version: 24
+  mcp_bridge:
+    display_name: MCP Bridge for AI Assistants
+    description: Lets AI assistants such as Claude edit the open document over the
+      Model Context Protocol, and run the machine only after you approve in Rayforge.
+    api_version: 24
+    depends:
+    - rayforge>=1.13.0
+    author:
+      name: Adrian Soltys
+      email: adriansoltys@gmail.com
+    license:
+      name: MIT
+    repository: https://github.com/adihack/rayforge-mcp
+    latest_stable: v0.4.1
+    versions:
+    - version: v0.4.1
+      api_version: 24
   my_addon:
     display_name: My Addon
     description: A template addon demonstrating code and asset provisioning.
